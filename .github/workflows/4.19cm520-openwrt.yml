@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: 419cm520
+name: 5cm520
 
 on:
   repository_dispatch:
@@ -20,11 +20,11 @@ on:
         default: 'false'
 
 env:
-  REPO_URL: https://github.com/coolsnowwolf/openwrt
-  REPO_BRANCH: lede-17.01
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: 419cm520.config
-  DIY_P1_SH: 419cm520.sh
+  CONFIG_FILE: 5cm520.config
+  DIY_P1_SH: 5cm520.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
