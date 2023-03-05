@@ -14,5 +14,6 @@
 #sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
 
 # Add a feed source
+sed -i '$a src-git helloworld https://github.com/fw876/helloworld.git' feeds.conf.default
 sed -i '$a src-git istore https://github.com/linkease/istore;main' feeds.conf.default
 # sed -i 's/KERNEL_PATCHVER:=6.1/KERNEL_PATCHVER:=5.15/g' ./target/linux/x86/Makefile
