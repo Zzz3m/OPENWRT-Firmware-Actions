@@ -1,21 +1,13 @@
 name: N1-arb
 
 on:
- push:
-    branches:
-      - main
-    paths:
-      - 'README.md'
-  schedule:
-    - cron: 0 8 * * 0
   repository_dispatch:
   workflow_dispatch:
-  inputs:
+    inputs:
       ssh:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-  
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
