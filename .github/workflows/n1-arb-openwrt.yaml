@@ -12,15 +12,15 @@ on:
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
-  SCRIPT_SH: script.sh
-  CONFIG_SH: config.sh
+  SCRIPT_SH: n1script.sh
+  CONFIG_SH: n1config.sh
   UPLOAD_FIRMWARE: true
   TZ: Asia/Shanghai
   KERNEL_VERSION: 6.1.10
 
 jobs:
   build_openwrt:
-    name: Build OpenWrt and release
+    name: N1-arb
     runs-on: ubuntu-20.04
 
     steps:
