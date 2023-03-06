@@ -1,4 +1,4 @@
-name: Cloud N1 OpenWrt
+name: N1-arb
 
 on:
   push:
@@ -20,7 +20,7 @@ env:
 
 jobs:
   build_openwrt:
-    name: N1-arb
+    name: Build OpenWrt and release
     runs-on: ubuntu-20.04
 
     steps:
