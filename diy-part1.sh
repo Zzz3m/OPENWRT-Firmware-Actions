@@ -1,7 +1,12 @@
 #!/bin/bash
 # DIY script part 1 (Before Update feeds)
 
-# binutils-2.42 host 编译时 musl sysroot 头文件路径被加入 -I，导致 readelf.c
-# 找不到 off64_t。在 Makefile 末尾追加 HOST_CFLAGS，GNU make += 任意位置有效。
-echo '' >> toolchain/binutils/Makefile
-echo 'HOST_CFLAGS += -D_LARGEFILE64_SOURCE=1' >> toolchain/binutils/Makefile
+# binutils-2.42 readelf.c fails when musl sysroot headers land in the host gcc
+# include path — musl gates off64_t behind _LARGEFILE64_SOURCE. Use a zero-context
+# patch (no surrounding lines) so it applies regardless of exact file content.
+cat > toolchain/binutils/patches/100-largefile64-readelf.patch << 'EOF'
+--- a/binutils/readelf.c
++++ b/binutils/readelf.c
+@@ -1,0 +1,1 @@
++#define _LARGEFILE64_SOURCE 1
+EOF
