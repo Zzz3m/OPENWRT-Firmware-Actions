@@ -3,3 +3,6 @@
 
 # Modify default IP
 sed -i 's/192.168.1.1/10.0.10.111/g' package/base-files/files/bin/config_generate
+
+# Add openwrt-iptvhelper
+git clone https://github.com/riverscn/openwrt-iptvhelper.git package/openwrt-iptvhelper
