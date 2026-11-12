@@ -21,6 +21,10 @@ Build OpenWrt using GitHub Actions
 
 Each build validates its device selection both before and after `make defconfig`.
 The supported build targets are x86-64, NanoPi R5S, and Cudy TR3000.
+R5S and Cudy use fw4/nftables router defaults through `diy-nftables.sh`.
+The R5S workflow also validates the generated configuration with
+`scripts/validate-fw4.sh`, including SSR Plus nftables mode and DNS nft sets,
+and fails if legacy fw3/iptables dependencies are selected again.
 
 Run `bash -n diy-part1.sh diy-part2.sh` and
 `python3 -B -m unittest discover -s tests -v` before starting a firmware build.

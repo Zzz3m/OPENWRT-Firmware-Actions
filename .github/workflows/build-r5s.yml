@@ -77,7 +77,7 @@ jobs:
         uses: klever1988/cachewrtbuild@main
         with:
           ccache: 'true'
-          mixkey: 'rockchip-armv8-largefile64-v2'
+          mixkey: 'rockchip-armv8-fw4-largefile64-v2'
           prefix: ${{ github.workspace }}/openwrt
 
       - name: Load custom feeds
@@ -85,6 +85,7 @@ jobs:
           chmod +x "$DIY_P1_SH"
           cd openwrt
           "$GITHUB_WORKSPACE/$DIY_P1_SH"
+          bash "$GITHUB_WORKSPACE/diy-nftables.sh"
 
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
@@ -109,6 +110,7 @@ jobs:
           cd openwrt
           make defconfig
           grep -qx "${TARGET_CONFIG}=y" .config
+          bash "$GITHUB_WORKSPACE/scripts/validate-fw4.sh" .config
           make download -j8
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
