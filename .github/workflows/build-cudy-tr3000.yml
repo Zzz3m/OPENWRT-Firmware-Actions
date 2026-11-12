@@ -78,6 +78,8 @@ jobs:
           chmod +x $DIY_P1_SH
           cd openwrt
           $GITHUB_WORKSPACE/$DIY_P1_SH
+          chmod +x $GITHUB_WORKSPACE/diy-cudy-nftables.sh
+          $GITHUB_WORKSPACE/diy-cudy-nftables.sh
 
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
@@ -101,6 +103,13 @@ jobs:
         run: |
           cd openwrt
           make defconfig
+          echo "=== Verify nftables-only firewall stack ==="
+          grep -q '^CONFIG_PACKAGE_firewall4=y' .config
+          grep -q '^CONFIG_PACKAGE_nftables-json=y' .config
+          if grep -E '^CONFIG_PACKAGE_(iptables|ip6tables|firewall)=y' .config; then
+            echo "::error::iptables 被 defconfig 重新拉入，请检查 DEFAULT_PACKAGES 与依赖"
+            exit 1
+          fi
           make download -j8
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
