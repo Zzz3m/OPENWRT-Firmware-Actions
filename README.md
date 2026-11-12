@@ -17,6 +17,22 @@ Build OpenWrt using GitHub Actions
 - Click the `Run workflow` button.
 - When the build is complete, click the `Artifacts` button in the upper right corner of the Actions page to download the binaries.
 
+## Local validation
+
+Each build validates its device selection both before and after `make defconfig`.
+The supported build targets are x86-64, NanoPi R5S, and Cudy TR3000.
+
+Run `bash -n diy-part1.sh diy-part2.sh` and
+`python3 -B -m unittest discover -s tests -v` before starting a firmware build.
+The regression checks apply the binutils patch and compile a C probe to ensure
+that the large-file feature macro is outside the opening copyright comment.
+`diy-part1.sh` must run from the LEDE source root; patches are installed under
+`toolchain/binutils/patches/<version>/` as required by the upstream Makefile.
+
+The workflows use Ubuntu 24.04 package names (`7zip`, `upx-ucl`, `libgmp-dev`)
+and include `libzstd-dev` and `zstd` for compressed build artifacts. Build cache
+keys have changed so toolchain outputs predating the patch fix are rebuilt.
+
 ## Tips
 
 - It may take a long time to create a `.config` file and build the OpenWrt firmware. Thus, before create repository to build your own firmware, you may check out if others have already built it which meet your needs by simply [search `Actions-Openwrt` in GitHub](https://github.com/search?q=Actions-openwrt).

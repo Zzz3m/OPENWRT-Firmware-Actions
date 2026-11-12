@@ -13,6 +13,7 @@ env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
   CONFIG_FILE: .configcudy
+  TARGET_CONFIG: CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3000-mod
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_FIRMWARE: true
@@ -27,6 +28,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate custom scripts
+        run: |
+          bash -n diy-part1.sh diy-part2.sh
+          grep -qx "${TARGET_CONFIG}=y" "$CONFIG_FILE"
+          python3 -B -m unittest discover -s tests -v
 
       - name: Free disk space
         uses: jlumbroso/free-disk-space@main
@@ -47,39 +54,39 @@ jobs:
             binutils bison build-essential bzip2 ccache clang cmake cpio curl \
             device-tree-compiler flex gawk gettext gcc-multilib g++-multilib genisoimage git \
             gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev \
-            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev \
+            libglib2.0-dev libgmp-dev libltdl-dev libmpc-dev libmpfr-dev \
             libncurses-dev libnsl-dev libpython3-dev libreadline-dev \
-            libssl-dev libtool llvm lrzsz ninja-build p7zip p7zip-full \
+            libssl-dev libtool libzstd-dev llvm lrzsz ninja-build 7zip \
             patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils \
             rsync scons squashfs-tools subversion swig texinfo uglifyjs unzip \
-            upx vim wget xmlto xxd xz-utils zlib1g-dev
+            upx-ucl vim wget xmlto xxd xz-utils zlib1g-dev zstd
           sudo -E apt-get -qq autoremove --purge
           sudo -E apt-get -qq clean
           sudo timedatectl set-timezone "$TZ"
           sudo mkdir -p /workdir
-          sudo chown $USER:$GROUPS /workdir
+          sudo chown "$(id -u):$(id -g)" /workdir
 
       - name: Clone source code
         working-directory: /workdir
         run: |
-          df -hT $PWD
-          git clone $REPO_URL -b $REPO_BRANCH openwrt
-          ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+          df -hT "$PWD"
+          git clone "$REPO_URL" -b "$REPO_BRANCH" openwrt
+          ln -sf /workdir/openwrt "$GITHUB_WORKSPACE/openwrt"
 
       - name: Cache
         uses: klever1988/cachewrtbuild@main
         with:
           ccache: 'true'
-          mixkey: 'mediatek-filogic'
+          mixkey: 'mediatek-filogic-largefile64-v2'
           prefix: ${{ github.workspace }}/openwrt
 
       - name: Load custom feeds
         run: |
-          chmod +x $DIY_P1_SH
+          chmod +x "$DIY_P1_SH"
           cd openwrt
-          $GITHUB_WORKSPACE/$DIY_P1_SH
-          chmod +x $GITHUB_WORKSPACE/diy-cudy-nftables.sh
-          $GITHUB_WORKSPACE/diy-cudy-nftables.sh
+          "$GITHUB_WORKSPACE/$DIY_P1_SH"
+          chmod +x "$GITHUB_WORKSPACE/diy-cudy-nftables.sh"
+          "$GITHUB_WORKSPACE/diy-cudy-nftables.sh"
 
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
@@ -89,11 +96,11 @@ jobs:
 
       - name: Load custom configuration
         run: |
-          [ -e files ] && mv files openwrt/files
-          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-          chmod +x $DIY_P2_SH
+          if [ -d files ]; then cp -a files openwrt/; fi
+          cp "$CONFIG_FILE" openwrt/.config
+          chmod +x "$DIY_P2_SH"
           cd openwrt
-          $GITHUB_WORKSPACE/$DIY_P2_SH
+          "$GITHUB_WORKSPACE/$DIY_P2_SH"
 
       - name: SSH connection to Actions
         uses: P3TERX/ssh2actions@main
@@ -103,6 +110,7 @@ jobs:
         run: |
           cd openwrt
           make defconfig
+          grep -qx "${TARGET_CONFIG}=y" .config
           echo "=== Verify nftables-only firewall stack ==="
           grep -q '^CONFIG_PACKAGE_firewall4=y' .config
           grep -q '^CONFIG_PACKAGE_nftables-json=y' .config
@@ -117,18 +125,18 @@ jobs:
       - name: Compile toolchain
         run: |
           cd openwrt
-          make toolchain/install -j$(nproc) || make toolchain/install -j1 V=s
+          make toolchain/install -j"$(nproc)" || make toolchain/install -j1 V=s
 
       - name: Compile firmware
         id: compile
         run: |
           cd openwrt
           echo -e "$(nproc) thread compile"
-          make -j$(nproc) || make -j1 || make -j1 V=s
-          echo "status=success" >> $GITHUB_OUTPUT
+          make -j"$(nproc)" || make -j1 || make -j1 V=s
+          echo "status=success" >> "$GITHUB_OUTPUT"
           grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-          [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
-          echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+          [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> "$GITHUB_ENV"
+          echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> "$GITHUB_ENV"
 
       - name: Check space usage
         if: (!cancelled())
@@ -140,8 +148,8 @@ jobs:
         run: |
           cd openwrt/bin/targets/*/*
           rm -rf packages
-          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "FIRMWARE=$PWD" >> "$GITHUB_ENV"
+          echo "status=success" >> "$GITHUB_OUTPUT"
 
       - name: Upload firmware directory
         uses: actions/upload-artifact@v4
@@ -154,11 +162,11 @@ jobs:
         id: tag
         if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
         run: |
-          echo "release_tag=CudyTR3000-$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+          echo "release_tag=CudyTR3000-$(date +"%Y.%m.%d-%H%M")" >> "$GITHUB_OUTPUT"
           touch release.txt
           echo "Cudy TR3000 (MediaTek Filogic MT7981) firmware" >> release.txt
           echo "Built on $(date +"%Y-%m-%d") from coolsnowwolf/lede" >> release.txt
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "status=success" >> "$GITHUB_OUTPUT"
 
       - name: Upload firmware to release
         uses: softprops/action-gh-release@v2
